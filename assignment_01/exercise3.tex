@@ -1,0 +1,12 @@
+\section{Exercise 3}
+First, we started by trying to understand the effect that the different additional elements and rules (compared to the normal reversi) have on the game. We concluded the following:
+\begin{enumerate}
+    \item holes can be used to create 'safe spaces' by covering paths that would go through them (if no additional transitions are in place). These 'safe spaces' might allow players to create a foundation/base for their stones. Additionally, they can be used to split the map for the elimination phase, as bomb explosions cannot pass through them. Thereby, bombs will have varying radii on different tiles (making certain stone constellations more desirable before the elimination phase).
+    \item expansion stones offer the possibility to spread out more rapidly, e.g. by creating longer paths for capturing. Through the 'Expansion Rule' they can even be used in combination with override stones to get to otherwise unreachable tiles.
+    \item bonus, choice, and inversion fields offer additional abilities. To balance their impact, they can be placed in less desirable spots.
+\end{enumerate}
+We then built the three maps for three different numbers of players (two, four, and eight). As additional players increase the complexity of the game and required calculations, the maps can be used to test how well the AI/computer player can deal with increased complexity.
+The most difficult part of the design was to keep it playable and as fair as possible. With the high complexity of the game and our limited experience with it, it was difficult to calculate/estimate the strength of a position. To avoid creating heavily one-sided maps, we decided to design our maps to be mostly symmetrical. Thereby every player has a close to identical starting point (disregarding the starting order).\\\\
+Another difficult step in designing the maps was choosing a fitting number of bombs. When choosing too many, almost no stones remain after the elimination phase, however to few cause the elimination phase to have almost no impact at all. To avoid total annihilation of all stones, we decided to undershoot the ideal amount rather than overshooting it.\\\\
+Lastly, to make the maps interesting, we played with a few different geometrical shapes and added transitions at the edges and into the center square (for map one).\\
+Credit: Jesper was responsible for creating our 3 interesting maps.

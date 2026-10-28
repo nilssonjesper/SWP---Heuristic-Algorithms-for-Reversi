@@ -1,0 +1,108 @@
+\documentclass[a4paper,12pt]{article}
+
+\usepackage[a4paper]{geometry}
+
+\usepackage[utf8]{inputenc}            % Use utf8 input encoding
+%\usepackage[latin1]{inputenc}         % Use iso 8859-1 encoding
+\usepackage[T1]{fontenc}               % T1 fonts (support for accents/diacritics)
+\usepackage{lmodern}                   % font with proper T1 support and good glyph quality
+
+\usepackage{xcolor}
+\definecolor{lightblue}{RGB}{28 148 252}
+\definecolor{lightred}{RGB}{245 61 70}
+\definecolor{lightgreen}{RGB}{87 171 39}
+
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{comment}
+
+\usepackage{pgfplots, pgfplotstable}
+\pgfplotsset{compat=newest}
+\usepgfplotslibrary{patchplots}
+\usepgfplotslibrary{dateplot}
+\include{pgffor}
+
+\usepackage{listings}
+
+\lstdefinelanguage{C++}{
+  morekeywords={abstract, assert, boolean, break, byte, case, catch, char, class, const,
+    continue, default, do, double, else, enum, extends, final, finally, float, for,
+    goto, if, implements, import, instanceof, int, interface, long, native, new,
+    package, private, protected, public, return, short, static, strictfp, super,
+    switch, synchronized, this, throw, throws, transient, try, void, volatile, while, using, typename},
+  sensitive=true,
+  morecomment=[l]//,
+  morecomment=[s]{/*}{*/},
+  morestring=[b]",
+}
+
+\lstset{
+  language=C++,
+  basicstyle=\ttfamily\footnotesize,
+  keywordstyle=\color{blue}\bfseries,
+  commentstyle=\color{gray}\itshape,
+  stringstyle=\color{orange},
+  showstringspaces=false,
+  numbers=left,
+  numberstyle=\tiny\color{gray},
+  stepnumber=1,
+  numbersep=5pt,
+  backgroundcolor=\color{white},
+  frame=single,
+  breaklines=true,
+  captionpos=b
+}
+
+\makeatletter
+\newcommand{\Letter}[1]{\@Alph{#1}}
+\makeatother
+
+\usepackage{amsmath}
+\usepackage{titlesec}
+\usepackage{tikz}
+\usetikzlibrary{automata,positioning,calc,decorations,fit,shapes,3d,arrows.meta,arrows}
+
+\usepackage{hyperref}
+
+\titleformat{\section}{\LARGE\bfseries}
+            {}{0pt}{}
+
+\usepackage{scalerel,stackengine}
+\newcommand\equalhat{\mathrel{\stackon[1.5pt]{=}{\stretchto{%
+\scalerel*[\widthof{=}]{\wedge}{\rule{1ex}{3ex}}}{0.5ex}}}}
+
+\begin{document}
+
+\begin{center}
+	\rule{\textwidth}{0.1pt}\\[1cm]
+	
+	\Large Softwarepraktikum SS 2025\\\bf Assignment 3
+\end{center}
+
+\begin{center}
+	\rule{\textwidth}{0.1pt}\\[0.5cm]
+
+	{\Large Group 7\\[5mm]}
+	\begin{tabular}{lll}
+		David Ichim & 459591 & david.ichim@rwth-aachen.de \\
+		Jenrik Meisel & 456942 & jenrik.meisel@rwth-aachen.de \\
+		Jesper Nilsson & 457057 & jesper.nilsson@rwth-aachen.de \\
+		Fina Schlindwein & 456038 & fina.schlindwein@rwth-aachen.de \\
+	\end{tabular}\\[0.5cm]
+
+	\rule{\textwidth}{0.1pt}\\[1cm]
+\end{center}
+
+\include{kogge-stone}
+\include{heuristics.tex}
+\include{exercise1}
+\include{exercise2}
+\include{exercise3}
+
+\section{Attribution}
+Jenrik: Kogge-Stone Algorithm\\
+Fina: Heuristic Evaluation and Weight Determination\\
+Jesper: Exercise 1 - 3\\
+David: Kogge-Stone Algorithm, Exercise 1 - 3
+
+\end{document}

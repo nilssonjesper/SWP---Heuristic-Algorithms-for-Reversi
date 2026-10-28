@@ -1,0 +1,21 @@
+\section{Exercise 5}
+
+Writing an algorithm for the elimination phase was relatively straightforward. The program checks whether the number of bombs is greater than zero and that the given field is not a hole. \\\\
+For the building phase, we decided it would be useful not only to verify whether a specific move is valid, but also to identify all possible valid moves. Therefore, we implemented a function \texttt{checkAllPlacable}, which iterates over all fields and checks whether a stone can be placed on each one. We added two layers to our bitmap to store the valid normal and override moves. The following function is used to validate a move: \\[-0.25em]
+\begin{lstlisting}
+public boolean isValidPlacing(byte row, byte col, boolean isOveride) {
+    // expansion rule
+    if (isOveride)
+        return getBit(9, row, col) ||
+            createsCapture(row, col);
+    return this.isEmpty(row, col) &&
+            createsCapture(row, col);
+}
+\end{lstlisting} 
+\vspace*{10px}
+If the parameter \texttt{isOveride} is set to \texttt{true}, the program checks whether the move qualifies as a valid override. Either the expansion rule must apply or the move must result in a capture. If the parameter is set to \texttt{false}, a normal placement is validated. In that case, the target square must be empty, and the move must result in a capture.
+To implement the capture check, we wrote the helper function \texttt{moveOneForward}. This function receives a position and a direction, and computes the next position and direction along the path, including transitions. We used a Depth-First Search (DFS) approach to detect captures: for each direction, the algorithm follows the path as long as the current field contains an enemy or an expansion tile. If a player’s stone is found at the end of the path (after at least one enemy or expansion tile), a capture is confirmed, thus making the move valid. \\ \\
+We concluded that, in the future, to improve efficiency when searching for all valid moves, it would be better to begin the search from the player’s stones. This approach would reduce the number of fields that need to be checked, especially during the early stages of the game. We began experimenting with a more optimized algorithm in our C++ implementation which is heavily reliant on bit operations and promises an \(\mathcal{O}\left(\log \max \left\{ w, h \right\}\right)\) uniform time complexity while returning a layer containing all legal move tiles, however it is not yet complete.\\ \\
+Currently, when a valid move is requested, we simply return the first valid move found in the array. In the case of a choice tile, we always select the next player \((\text{player} + 1) \mod 8\). For bonus tiles, we always choose the bomb.\\
+Credit: Similar to Task 4, we also chose to implement one algorithm each, with David being responsible for the C++ version and the three others 
+being responsible for Java. We chose to use Finas algorithm as a base, which Henrik greatly enhanced with his ideas.

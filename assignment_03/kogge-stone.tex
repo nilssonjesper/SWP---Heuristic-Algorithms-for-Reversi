@@ -1,0 +1,254 @@
+\section{Kogge-Stone Algorithm}
+The \textit{Kogge-Stone parallel prefix algorithm} was originally developed as an efficient method for implementing carry-lookahead hardware adders. Its first known application to bitboard move generation is attributed to Steffan Westcott, who adapted the algorithm to generate sliding piece attacks in chess engines. In classical Reversi, the algorithm is used by top engines to compute valid moves for a given player with logarithmic time complexity. Due to its inherently parallel structure, the algorithm is also well-suited for multithreaded execution. 
+
+\subsection*{Base Implementation for Classical Reversi}
+Standard \textit{Reversi} is restricted to only two players. Let layers \(l_1,\,l_2\) encode the stones of player 1 and player 2 accordingly (\textbf{Reminder}: We refer to the bitset which is responsible for encoding the position of every stone of type \(\tau\) on the board as layer \(l_\tau\)). To generate moves for player 1, the algorithm operates as follows: \\
+\begin{lstlisting}[mathescape, caption = Kogge–Stone Base Implementation]
+res = 0;
+
+for every direction dir
+{
+  gen = $l_1$;  ///< generator set
+  pro = $l_2$;  ///< propagator set
+
+  /// propagate entire board or until propagator set is empty
+  for (dist = 1; pro && dist < map_size; dist <<= 1)
+  {
+    gen |= pro & shift(dir, gen, dist);
+    pro &= shift(dir, pro, dist);
+  }
+	
+  res |= shift(dir, gen & o, 1);
+}
+
+return res & ~(p | o); ///< omit place if colliding with stone
+\end{lstlisting}
+\vspace{10px}
+We will refer to stones belonging to player 1 as \textbf{player stones}, and stones of player 2 as \textbf{opponent stones}. Let north be an arbitrary but fixed propagation direction. We define a \textbf{generator chain} as a sequence of stones beginning with a player stone, which may be followed by an arbitrary number of consecutive opponent stones in the propagation direction. At each iteration of the inner loop, these generator chains are extended towards the north by a distance that doubles each time. On the other hand, \textbf{propagator chains} may solely consist of consecutive opponent stones in the propagation direction. Consequently, \texttt{gen} initially contains the starting elements of potential generator chains (i.e. every player stone: potential sources of captures), while \texttt{pro} consists of all opponent stones. During each iteration, each generator chain is expanded by shifting \texttt{gen} by the current distance and intersecting the result with the propagator set. Subsequently, the propagator set is then reduced in the propagation direction at each iteration. This ensures that any possible gaps, which may be skipped by the generator set when doubling the shift distance, are eliminated, as the generator is only filled with remaining propagator elements as the chain expands. As the growth rate of generator chains matches the contraction rate of propagator chains, a binary decomposition of \textit{all} distances occurs. Upon termination of the inner loop, \texttt{gen} will contain all fully-formed generator chains. These indicate where captures may occur if a move is placed at the final empty square of the chain, as per classical Reversi.
+\subsubsection*{Visualization}
+Below is a visualization of the first iteration of the outer loop (north propagation) performed on the following map:
+\vspace{10px}
+\begin{center}
+\begin{tikzpicture}[scale=0.45]
+  % Draw grid
+  \foreach \x in {0,...,7} {
+    \foreach \y in {0,...,7} {
+      \draw (\x, -\y) rectangle ++(1, -1);
+    }
+  }
+
+  % Label rows and columns
+  \foreach \x in {1,...,8} {
+    \node at (\x - 0.5, 0.5) {\x};
+		\node at (-0.5, -\x + 0.5) {\Letter{\x}};
+  }
+
+  % Player 1
+  \foreach \pos in {(1.5,-5.5),(6.5, -3.5),(6.5, -4.5)} {
+    \fill[lightred] \pos circle(0.35);
+  }
+
+	% Player 2
+	\foreach \pos in {(1.5,-1.5),(1.5,-3.5),(1.5,-4.5),(2.5,-5.5),(6.5, -2.5)} {
+    \fill[lightblue] \pos circle(0.35);
+  }
+
+	% Legend
+	\fill[lightred] (8.75, -6.75) rectangle ++(0.5, 0.5);
+	\node[] at (11, -6.5) {player 1};
+	\fill[lightblue] (8.75, -7.75) rectangle ++(0.5, 0.5);
+	\node[] at (11, -7.5) {player 2};
+\end{tikzpicture}
+\end{center}
+\vspace{10px}
+\underline{\textbf{Iteration 0 (of inner loop):}}
+\begin{center}
+\begin{minipage}{.5\linewidth}
+	gen = \(l_1\):
+	\begin{center}
+	\begin{tikzpicture}[scale=0.45]
+		\foreach \x in {0,...,7} {
+			\foreach \y in {0,...,7} {
+				\draw (\x, -\y) rectangle ++(1, -1);
+			}
+		}
+		\foreach \x in {1,...,8} {
+			\node at (\x - 0.5, 0.5) {\x};
+			\node at (-0.5, -\x + 0.5) {\Letter{\x}};
+		}
+		\foreach \pos in {(1.5,-5.5),(6.5, -3.5),(6.5, -4.5)} {
+			\fill[lightred] \pos circle(0.35);
+		}
+
+		\draw[lightgreen, thick, -{Latex}] (2.2, -6) -- (2.2, -5);
+		\draw[lightgreen, thick, -{Latex}] (7.2, -5) -- (7.2, -4);
+		\draw[lightgreen, thick, -{Latex}] (7.2, -4) -- (7.2, -3);
+
+		% Legend
+		\draw[lightgreen, thick, -{Latex}] (8.5, -7.75) -- (9, -7.25);
+		\node[align=left] at (10.5, -7) {gen. \\ chain};
+	\end{tikzpicture}
+	\end{center}
+\end{minipage}%
+\begin{minipage}{.5\linewidth}
+	pro = \(l_2\):
+	\begin{center}
+	\begin{tikzpicture}[scale=0.45]
+		\foreach \x in {0,...,7} {
+			\foreach \y in {0,...,7} {
+				\draw (\x, -\y) rectangle ++(1, -1);
+			}
+		}
+		\foreach \x in {1,...,8} {
+			\node at (\x - 0.5, 0.5) {\x};
+			\node at (-0.5, -\x + 0.5) {\Letter{\x}};
+		}
+		\foreach \pos in {(1.5,-1.5),(1.5,-3.5),(1.5,-4.5),(2.5,-5.5),(6.5, -2.5)} {
+			\fill[lightblue] \pos circle(0.35);
+		}
+
+		\draw[lightgreen, thick, -{Latex}] (2.2, -5) -- (2.2, -3);
+		\draw[lightgreen, thick, -{Latex}] (2.2, -2) -- (2.2, -1);
+		\draw[lightgreen, thick, -{Latex}] (3.2, -6) -- (3.2, -5);
+		\draw[lightgreen, thick, -{Latex}] (7.2, -3) -- (7.2, -2);
+
+		% Legend
+		\draw[lightgreen, thick, -{Latex}] (8.5, -7.75) -- (9, -7.25);
+		\node[align=left] at (10.5, -7) {pro. \\ chain};
+	\end{tikzpicture}
+	\end{center}
+\end{minipage}
+\end{center} %
+\underline{\textbf{Iteration 1:}} (dist = 1)
+\begin{center}
+\begin{minipage}{.5\linewidth}
+	gen:
+	\begin{center}
+	\begin{tikzpicture}[scale=0.45]
+		\foreach \x in {0,...,7} {
+			\foreach \y in {0,...,7} {
+				\draw (\x, -\y) rectangle ++(1, -1);
+			}
+		}
+		\foreach \x in {1,...,8} {
+			\node at (\x - 0.5, 0.5) {\x};
+			\node at (-0.5, -\x + 0.5) {\Letter{\x}};
+		}
+		\foreach \pos in {(1.5,-5.5),(6.5,-3.5),(6.5,-4.5)} {
+			\fill[lightred] \pos circle(0.35);
+		}
+		\foreach \pos in {(1.5,-4.5),(6.5,-2.5)} {
+			\fill[lightblue] \pos circle(0.35);
+		}
+
+		\draw[lightgreen, thick, -{Latex}] (2.2, -6) -- (2.2, -4);
+		\draw[lightgreen, thick, -{Latex}] (7.2, -5) -- (7.2, -4);
+		\draw[lightgreen, thick, -{Latex}] (7.2, -4) -- (7.2, -2);
+
+		% Legend
+		\draw[lightgreen, thick, -{Latex}] (8.5, -7.75) -- (9, -7.25);
+		\node[align=left] at (10.5, -7) {gen. \\ chain};
+	\end{tikzpicture}
+	\end{center}
+\end{minipage}%
+\begin{minipage}{.5\linewidth}
+	pro:
+	\begin{center}
+	\begin{tikzpicture}[scale=0.45]
+		\foreach \x in {0,...,7} {
+			\foreach \y in {0,...,7} {
+				\draw (\x, -\y) rectangle ++(1, -1);
+			}
+		}
+		\foreach \x in {1,...,8} {
+			\node at (\x - 0.5, 0.5) {\x};
+			\node at (-0.5, -\x + 0.5) {\Letter{\x}};
+		}
+		\fill[lightblue] (1.5,-3.5) circle(0.35);
+
+		\draw[lightgreen, thick, -{Latex}] (2.2, -4) -- (2.2, -3);
+
+		% Legend
+		\draw[lightgreen, thick, -{Latex}] (8.5, -7.75) -- (9, -7.25);
+		\node[align=left] at (10.5, -7) {pro. \\ chain};
+	\end{tikzpicture}
+	\end{center}
+\end{minipage}
+\end{center}
+\vspace*{20px}
+\begin{figure}[h!]
+\underline{\textbf{Iteration 2:}} (dist = 2)
+\begin{center}
+\begin{minipage}{.5\linewidth}
+	gen:
+	\begin{center}
+	\begin{tikzpicture}[scale=0.45]
+		\foreach \x in {0,...,7} {
+			\foreach \y in {0,...,7} {
+				\draw (\x, -\y) rectangle ++(1, -1);
+			}
+		}
+		\foreach \x in {1,...,8} {
+			\node at (\x - 0.5, 0.5) {\x};
+			\node at (-0.5, -\x + 0.5) {\Letter{\x}};
+		}
+		\foreach \pos in {(1.5,-5.5),(6.5,-3.5),(6.5,-4.5)} {
+			\fill[lightred] \pos circle(0.35);
+		}
+		\foreach \pos in {(1.5,-4.5),(1.5,-3.5),(6.5,-2.5)} {
+			\fill[lightblue] \pos circle(0.35);
+		}
+
+		\draw[lightgreen, thick, -{Latex}] (2.2, -6) -- (2.2, -3);
+		\draw[lightgreen, thick, -{Latex}] (7.2, -5) -- (7.2, -4);
+		\draw[lightgreen, thick, -{Latex}] (7.2, -4) -- (7.2, -2);
+
+		\draw[lightgreen, ultra thick] (1, -2) rectangle ++(1, -1);
+		\draw[lightgreen, ultra thick] (6, -1) rectangle ++(1, -1);
+		\draw[dashed, lightgreen, ultra thick] (6, -3) rectangle ++(1, -1);
+
+		% Legend
+		\draw[lightgreen, thick, -{Latex}] (8.5, -7.75) -- (9, -7.25);
+		\node[align=left] at (10.5, -7) {gen. \\ chain};
+		\draw[lightgreen, thick, dashed] (8.5, -4.75) rectangle ++(0.5, -0.5);
+		\node[align=left] at (10.5, -4.5) {omit \\ place};
+		\draw[lightgreen, thick] (8.5, -2.25) rectangle ++(0.5, -0.5);
+		\node[align=left] at (10.5, -2.5) {place};
+	\end{tikzpicture}
+	\end{center}
+\end{minipage}%
+\begin{minipage}{.5\linewidth}
+	pro:
+	\begin{center}
+	\begin{tikzpicture}[scale=0.45]
+		\foreach \x in {0,...,7} {
+			\foreach \y in {0,...,7} {
+				\draw (\x, -\y) rectangle ++(1, -1);
+			}
+		}
+		\foreach \x in {1,...,8} {
+			\node at (\x - 0.5, 0.5) {\x};
+			\node at (-0.5, -\x + 0.5) {\Letter{\x}};
+		}
+
+		% Legend
+		\draw[lightgreen, thick, -{Latex}] (8.5, -7.75) -- (9, -7.25);
+		\node[align=left] at (10.5, -7) {pro. \\ chain};
+	\end{tikzpicture}
+	\end{center}
+\end{minipage}
+\end{center}
+\caption{Kogge-Stone Demo}
+\label{fig:kogge_demo}
+\end{figure}
+\vspace{20px}
+\subsection*{Reversi plus X Adaptation}
+As outlined in our first report, to handle maps with more than two players, all individual opponent layers are consolidated into a singular layer that encodes the positions of all opposing players, allowing for the standard Kogge-Stone algorithm to be employed for move generation.
+
+\subsubsection*{Transition Mechanic}
+Upon receiving the game data, a lookup table (LUT) is built to encode the transition specifications of the map. 
+For each bidirectional transition of the form \(\left(x_1, y_1, d_1\right) \leftrightarrow \left(x_2, y_2, d_2\right)\), the LUT stores two separate entries mapping both domains to eachother. After applying the Kogge-Stone algorithm in a given propagation direction, the intersection between the resulting generator set --- consisting of every generator chain --- and the set of transition domain tiles for that direction represents the subset of all transition domains through which the attacking player can potentially capture. To resolve these transitions, once the routine commences execution in the codomain direction, the initial generator set is extended by a simulated player stone on the codomain tiles. Resultingly, once the Kogge-Stone algorithm is applied for the codomain direction, the new generator set may contain chains which would have propagated through a transition. This process of reapplying Kogge-Stone is repeated iteratively until the generator touches no new transitions in all directions.
+
+\subsubsection*{Override Mechanic}
+Valid override moves are computed in parallel with (classical) place moves. For overrides involving opponent stones, every element of a generator chain, excluding the initial player stone and the directly adjacent opponent stones, are extracted. To generate moves overriding the attacking player's own stones, the generator is shifted analogously to standard move generation \ref{fig:kogge_demo}, while the result is intersected with the set of player stones. Edge cases introduced by simulated transition stones are handled through a dynamic programming approach using layers \texttt{\_t\_gen} and \texttt{\_n\_t\_gen\_visited} to store simulated player stones for each activated transition along with whether the transition was visited during prior propagation or not. Lastly, the expansion rule is implemented by taking the union of the resulting move set with the expansion stone layer.
+

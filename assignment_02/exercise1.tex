@@ -1,0 +1,78 @@
+\section{Exercise 1}
+
+We have decided to migrate the project from Java to C++. This decision was made primarily for performance-related reasons. Benchmarking results of move generation demonstrate that our C++ implementation achieves a speedup of up to \textbf{1200x} on densely populated maps and a performance improvement of approximately \textbf{100x} on average \ref{fig:cppvsjava}. It is important to state, however, that we have devised new algorithms and employed a handful of optimizations for move generation and resolution, which massively contribute to the observed performance improvements. \\
+\begin{figure}[h!]
+\centering
+\begin{tikzpicture}[
+		auto,
+		semithick,
+		node distance=0.0cm,
+	]
+	\begin{axis}[
+		axis lines=left,
+		axis line style={->},
+		xmin=0,
+		xmax=2500,
+		ymin=100,
+		ymax=400000000,
+		xmode=log,
+		ymode=log,
+		log basis x=2,
+		log basis y=2,
+		xlabel={$N := wh$},
+		xlabel style={at={(axis description cs:1,0)}, anchor=south east},
+		ylabel={$t/\mu s$},
+		ylabel style={at={(axis description cs:0,1)}, anchor=north east},
+		xtick={2, 25, 64, 280, 625, 2500},
+		xticklabels={2, 25, 64, 280, 625, 2500},
+		ytick={1000, 10000, 100000, 1000000, 10000000, 100000000},
+		yticklabels={1, 10, \(10^2\), \(10^3\), \(10^4\), \(10^5\)},
+		grid=none,
+		legend pos=outer north east
+	]
+
+	\addplot[
+		color=rwth,
+		thick,
+	]
+	coordinates {
+		(2,2500)
+		(14,3300)
+		(64,3900)
+		(66,17000)
+		(121,20000)
+		(256,22000)
+		(625,30000)
+		(2500,35000)
+	};
+
+	\draw [red, dashed] (axis cs:65,0)--(axis cs: 65,100000000);
+	\node[red] at (axis cs:200,2000) [scale=0.6, align=left] {\texttt{micro\_layer} \\ \(\to\) \texttt{macro\_layer}};
+	\node[rwth] at (axis cs:1900,12000) [scale=0.75, align=left] {cpp};
+	\node[orange] at (axis cs:1900,10000000) [scale=0.75, align=left] {java};
+
+	\addplot[
+		color=orange,
+		thick,
+	]
+	coordinates {
+		(2,400000)
+		(25,450000)
+		(64,1000000)
+		(280,2500000)
+		(625,11000000)
+		(2500,36000000)
+	};
+	\end{axis}
+\end{tikzpicture}
+\caption{Move generation Benchmark C++ vs Java}
+\label{fig:cppvsjava}
+\end{figure} \\
+Our game client encapsulates an \texttt{Instance} object responsible for modeling the ongoing instance of Reversi Plus X as managed by the server. It must therefor be able to update its internal map representation based on a given move description and the current game state. This decoupling of instances from the client will allow us to perform evaluations on game tree nodes for future assignments, as each node may be encoded as an instance.\\\\
+The generation of a successor state is handeled privately inside of the \texttt{Instance} class and is invoked via the \texttt{apply\_move} member function. The capture logic relies on the Kogge-Stone parallel prefix algorithm, using direction-specific bitshifts to avoid noise when shifting that is caused by edge-wrapping. These bitshifts rely on masks, which are precomputed and stored inside a lookup table (LUT) prior to server connection, enabling constant-time shifting in all directions, despite the boards variable size. To handle transitions on the board, the \texttt{apply\_move} algorithm checks whether a transition domain is touched during propagation in the transition domain direction. Upon detection of a possible transition, a recursive call is made to the propagation function in the transition codomain direction where the transition codomain tile on the board is set to the player's stone currently performing the capture. Resultingly, the uniform complexity of our algorithm is
+\begin{align*}
+	\mathcal{O}\left(T \cdot \log_2\left(\max\left\{w, h\right\}\right)\right),
+\end{align*}
+where \(T\) is the maximum transition depth and \(w, h\) denote the width and height of the map, respectively.\\\\
+To manage the effect of inversion and choice tiles while avoiding unnecessary copies of bit layers, we map each player to a color using a fixed size array, where entry \(i\) represents the current color of player \(i\). This enables the instance to realize the effects of special tiles using simple swap operations on array elements of trivial types.\\\\
+For phase 2, a routine which decomposes the bit layer map representation into an \textbf{Octree} was considered, as it allows for efficient flooding algorithms to be employed when computing the area-of-effect of bombs. We plan on further exploring this idea in the following assignments.

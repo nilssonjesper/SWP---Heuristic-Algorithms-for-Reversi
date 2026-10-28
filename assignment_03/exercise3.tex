@@ -1,0 +1,99 @@
+\section{Exercise 3}
+
+The following scatter plots display the size of the state space that was searched by our client in the \texttt{\_best\_move} routine, along with the time which it took to evaluate the root of the game tree (i.e. finding the best successor state). We have tested both algorithms simultaneously on varying maps and at varying depth cutoffs and have collected the following data: 
+\begin{center}
+\begin{tikzpicture}
+\begin{axis}[
+	scale=0.75,
+	title={2025\_g4\_1\_chess.map (50x50, 2 player), depth 3},
+	xlabel={States Searched},
+	ylabel={Time (ms)},
+	ylabel near ticks,
+	yticklabel pos=right,
+	grid=both,
+	width=12cm,
+	height=8cm,
+	scatter/classes={
+		a={mark=*,lightred}
+	},
+	scatter,
+	only marks,
+	mark size=1.5pt,
+	legend style={
+		at={(0.6,0.95)},
+		font=\small
+	},
+	legend cell align={left}
+]
+	\addplot[scatter, only marks, mark=square*, lightred] table [x=states, y=time, col sep=space] {minimax_prune_chess.txt};
+	\addlegendentry{Minimax}
+	% \addplot[lightred] table[y={create col/linear regression={y=time}}] {minimax_prune_chess.txt};
+
+	\addplot[scatter, only marks, mark=square*, lightblue, legend image post style={lightblue}] table [x=states, y=time, col sep=space] {minimax_noprune_chess.txt};
+	\addlegendentry{Minimax + Alpha Beta Pruning}
+	% \addplot[lightblue] table[y={create col/linear regression={y=time}}] {minimax_noprune_chess.txt};
+\end{axis}
+\end{tikzpicture}
+\vspace{20px}
+\begin{tikzpicture}
+\begin{axis}[
+	scale=0.75,
+	title={50\_50\_8\_25\_rnd\_1.map, (50x50, 8 player), depth 2},
+	xlabel={States Searched},
+	ylabel={Time (ms)},
+	ylabel near ticks,
+	yticklabel pos=right,
+	grid=both,
+	width=12cm,
+	height=8cm,
+	scatter/classes={
+		a={mark=*,lightred}
+	},
+	scatter,
+	only marks,
+	mark size=1.5pt,
+	legend style={
+		at={(0.6,0.95)},
+		font=\small
+	},
+	legend cell align={left}
+]
+	\addplot[scatter, only marks, mark=square*, lightred] table [x=states, y=time, col sep=space] {minimax_prune_5050.txt};
+	\addlegendentry{Minimax}
+
+	\addplot[scatter, only marks, mark=square*, lightblue, legend image post style={lightblue}] table [x=states, y=time, col sep=space] {minimax_noprune_5050.txt};
+	\addlegendentry{Minimax + Alpha Beta Pruning}
+\end{axis}
+\end{tikzpicture}
+\vspace{20px}
+\begin{tikzpicture}
+\begin{axis}[
+	scale=0.75,
+	title={2025\_g4\_2\_sphere.map, (8x8, 2 player), depth 7},
+	xlabel={States Searched},
+	ylabel={Time (ms)},
+	ylabel near ticks,
+	yticklabel pos=right,
+	grid=both,
+	width=12cm,
+	height=8cm,
+	scatter/classes={
+		a={mark=*,lightred}
+	},
+	scatter,
+	only marks,
+	mark size=1.5pt,
+	legend style={
+		at={(0.6,0.95)},
+		font=\small
+	},
+	legend cell align={left}
+]
+	\addplot[scatter, only marks, mark=square*, lightred] table [x=states, y=time, col sep=space] {minimax_prune_sphere.txt};
+	\addlegendentry{Minimax}
+
+	\addplot[scatter, only marks, mark=square*, lightblue, legend image post style={lightblue}] table [x=states, y=time, col sep=space] {minimax_noprune_sphere.txt};
+	\addlegendentry{Minimax + Alpha Beta Pruning}
+\end{axis}
+\end{tikzpicture}
+\end{center}

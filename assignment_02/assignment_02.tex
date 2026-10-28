@@ -1,0 +1,100 @@
+\documentclass[a4paper,12pt]{article}
+
+\usepackage[a4paper]{geometry}
+
+\usepackage[utf8]{inputenc}            % Use utf8 input encoding
+%\usepackage[latin1]{inputenc}         % Use iso 8859-1 encoding
+\usepackage[T1]{fontenc}               % T1 fonts (support for accents/diacritics)
+\usepackage{lmodern}                   % font with proper T1 support and good glyph quality
+
+\usepackage{listings}                  % for (code) listings
+\usepackage{xcolor}
+\definecolor{rwth}{RGB}{0 84 159}
+
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{graphicx}
+\usepackage{float}
+
+\usepackage{pgfplots}
+\pgfplotsset{compat=newest}
+\usepgfplotslibrary{patchplots}
+\usepgfplotslibrary{dateplot}
+\include{pgffor}
+
+\lstdefinelanguage{Java}{
+  morekeywords={abstract, assert, boolean, break, byte, case, catch, char, class, const,
+    continue, default, do, double, else, enum, extends, final, finally, float, for,
+    goto, if, implements, import, instanceof, int, interface, long, native, new,
+    package, private, protected, public, return, short, static, strictfp, super,
+    switch, synchronized, this, throw, throws, transient, try, void, volatile, while},
+  sensitive=true,
+  morecomment=[l]//,
+  morecomment=[s]{/*}{*/},
+  morestring=[b]",
+}
+
+\lstset{
+  language=Java,
+  basicstyle=\ttfamily\small,
+  keywordstyle=\color{blue}\bfseries,
+  commentstyle=\color{gray}\itshape,
+  stringstyle=\color{orange},
+  showstringspaces=false,
+  numbers=left,
+  numberstyle=\tiny\color{gray},
+  stepnumber=1,
+  numbersep=5pt,
+  backgroundcolor=\color{white},
+  frame=single,
+  breaklines=true,
+}
+\usepackage{amsmath}
+\usepackage{titlesec}
+\usepackage{tikz}
+\usetikzlibrary{automata,arrows,positioning,calc,decorations,fit,shapes,3d}
+
+\usepackage{hyperref}
+
+\titleformat{\section}{\LARGE\bfseries}% hide redundant number
+            {}{0pt}{}
+
+\usepackage{scalerel,stackengine}
+\newcommand\equalhat{\mathrel{\stackon[1.5pt]{=}{\stretchto{%
+\scalerel*[\widthof{=}]{\wedge}{\rule{1ex}{3ex}}}{0.5ex}}}}
+
+\begin{document}
+
+\begin{center}
+	\rule{\textwidth}{0.1pt}\\[1cm]
+	
+	\Large Softwarepraktikum SS 2025\\\bf Assignment 2
+\end{center}
+
+
+\begin{center}
+	\rule{\textwidth}{0.1pt}\\[0.5cm]
+	{\Large Group 7\\[5mm]}
+	\begin{tabular}{lll}
+		David Ichim & 459591 & david.ichim@rwth-aachen.de \\
+		Jenrik Meisel & 456942 & jenrik.meisel@rwth-aachen.de \\
+		Jesper Nilsson & 457057 & jesper.nilsson@rwth-aachen.de \\
+		Fina Schlindwein & 456038 & fina.schlindwein@rwth-aachen.de \\
+	\end{tabular}\\[0.5cm]
+\end{center}
+
+\rule{\textwidth}{0.1pt}\\[1cm]
+
+\include{benchmarks}
+\include{exercise1}
+\include{exercise2}
+\include{exercise3}
+\include{exercise4}
+
+\section{Attribution}
+Jenrik: Java Benchmarks, Finding Successor States \& Full Gameplay Implementation\\
+Fina: Full Gameplay Implementation \& Heuristics\\
+Jesper: Heuristics \& Plotting\\
+David: Finding Successor States, Full Gameplay Implementation \& Heuristics
+
+\end{document}

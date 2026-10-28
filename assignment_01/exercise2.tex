@@ -1,0 +1,16 @@
+\section{Exercise 2}
+After investigating the binaries using the -h flag, we found a lot of information regarding their function. Especially the 'mapinfo' binary was of great interest to us, as we used it to create our maps.
+This is the information we were able to gather from the different binaries:\\ \\
+The 'mapinfo' binary offers various tests for the created maps. It can be used to check the following:
+\begin{enumerate}
+    \item correct formatting of the map
+    \item legality of the implemented transitions
+    \item number of player, override stones, bombs (\& their impact)
+    \item depth required to reach all possible tiles
+    \item number of reachable bonus, choice, and inversion tiles
+\end{enumerate}
+The binary also offers various ways of displaying this information.
+The 'ai' binary offers the possibility to test the computer player by letting it play against the AI. The strength of the AI can be set by limiting the evaluation functions, depth, calculation time, and more.
+The 'server' binary can be used to host a game with a certain (or standard) map. It is possible to set parameters such as time and depth limits, specify files to log the moves, or add observers.
+And lastly, the 'client' binary is used to connect to a given server.\\
+Credits: To fully understand the binaries, we all investigated them with -h. They were especially important for Task 6 and 3.

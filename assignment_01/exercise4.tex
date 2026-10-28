@@ -1,0 +1,93 @@
+\section{Exercise 4}
+The following solution describes the C++ implementation of Task 4. We have completed Task 4 both in Java and in C++ using identical approaches, however, we choose to describe the C++ implementation, as it allows us to go further in depth regarding performance optimizations and advances made. \\\\
+Given a map of area \(N := w \cdot h\), where \(w,\,h \in \underline{50}\), we store for every \textbf{type of tile} \(\tau\), excluding the empty tile, e.g. \textit{choice tile}, \textit{player p occupied tile}, \textit{hole} etc. a sequence \(l_\tau\) of \(N\) bits, which we label \textbf{layer} (holding \(\tau\)), where
+\begin{align*}
+	l_\tau(n) = 1 :\Leftrightarrow \text{tile \(\left(x, y\right) \in T\) is of type \(\tau\), where \(n =: x + wy,\,T := \underline{w} \times \underline{h}\)}
+\end{align*}
+By definition of the maximum permitted width and height of a given map, we can conclude, that
+\begin{align*}
+	\max N = \max w \cdot \max h = 50^2 = 2500
+\end{align*}
+In our C++ implementation, \(l_\tau \left(\forall \text{ tile types } \tau\right)\) is represented differently depending on \(N\). This is achieved through a generic map class, where the template type is the internal representation of the map's individual layers. Currently, this type is constrained to either \texttt{uint64\_t} or \texttt{std::bitset<2500>}, however, the use of generics leaves room for additional data structures for layers in the future, while simultaneously reducing code duplication. \\\\
+The main purpose for the use of these two different data types is to avoid the unnecessary overhead which comes with using \texttt{std::bitset} when dealing with maps where each layer can be represented using \(\leq 64\) bits. We will refer to maps which use the \texttt{uint64\_t} layer representation as micro maps, and inversely, maps relying on the standard library bitset as macro maps. As the size of a bitset must be known at compile time, macro layers always hold \(\max N = 2500\) bits, regardless whether the map may be represented using fewer bits. This does not pose a significant impact on performance, however, as the restriction of the maximum map area certainly allows macro layers to fit inside the L1 cache. An alternative to statically-sized bitsets would be, for example, the \texttt{boost::dynamic\_bitset} provided by the boost library. However, using this representation resulted in \(\sim\text{10 - 30x}\) slower evaluation of the \texttt{\_get\_legal\_moves} function and is therefore dismissed. \\\\
+While micro layers may only be employed on smaller maps, intrinsic functions such as \texttt{\_pdep\_u64()}, \texttt{\_pext\_u64()} etc. make bit manipulation relevant for move generation and updating the map extremely efficient. This is a significant advantage over any approach using \texttt{std::vector<bool>} or an intuitive boolean array layer representation, as we will expand on in the next section. To highlight a significant advantage: Let \(\sim\) be an equivalence relation over the set of all tiles \(T\) on any given map, where 
+\begin{align*}
+	\forall t_1, t_2 \in T: t_1 \sim t_2 \, \Leftrightarrow \, \tau(t_1) = \tau(t_2)
+\end{align*}
+Then \(L := T/\sim\) is the \textbf{set of all layers}. To generate legal moves for a given player p, we may view the consolidation of all layers belonging to every player, except player p, as one singular opponent, allowing classical reversi move generation algorithms to be employed. Let \underline{8} be the set describing all players and \(P \subset L\) the set describing all layers holding player stones. Let \(\rho: \underline{8} \to P\) map each player to its own layer of stones.
+Consequently, the opponent layer is described by \(\bigcup_{p'\,\in\,P\,\setminus\,\rho(p)} p'\). Using bitfields to represent layers, the computation of this expression only requires the bitwise OR of all layers \(P \setminus \rho(p)\) and is therefore extremely (space) efficient.\\
+\begin{center}
+\begin{tikzpicture}[
+	auto,
+	semithick,
+]
+	\begin{scope}
+		\draw (0, 0, 0) -- (xyz cylindrical cs:radius=2);
+		\draw (0, 0, 0) -- (xyz cylindrical cs:z=2);
+		\draw (0, 0, 2) -- (xyz cylindrical cs:radius=2, z=2);
+		\draw (2, 0, 2) -- (xyz cylindrical cs:radius=2);
+		\begin{scope}[shift={(0, 0, 2)}, cm={1, 0, 0.4, 0.5, (0,0)}]
+			\draw (1, 0.9) circle (0.1);
+			\draw (0.3, 0.9) circle (0.1);
+			\draw (0.3, 0.6) circle (0.1);
+			\draw (0.3, 0.3) circle (0.1);
+			\draw (1.8, 1.2) circle (0.1);
+		\end{scope}
+		\node[scale=0.8, anchor=west] at (2.5, 0, 1) {layer p};
+	\end{scope}
+	\begin{scope}[shift={(0, -0.9, 0)}]
+		\draw (0, 0, 0) -- (xyz cylindrical cs:radius=2);
+		\draw (0, 0, 0) -- (xyz cylindrical cs:z=2);
+		\draw (0, 0, 2) -- (xyz cylindrical cs:radius=2, z=2);
+		\draw (2, 0, 2) -- (xyz cylindrical cs:radius=2);
+		\begin{scope}[shift={(0, 0, 2)}, cm={1, 0, 0.4, 0.5, (0,0)}]
+			\filldraw[fill=black, draw=black] (1.8, 0.3) circle (0.1);
+			\filldraw[fill=black, draw=black] (1.5, 0.3) circle (0.1);
+			\filldraw[fill=black, draw=black] (1.5, 0.6) circle (0.1);
+		\end{scope}
+		\node[scale=0.8, anchor=west] at (2.5, -0.1, 1) {layer \(\bigcup_{p'\,\in\,P\,\setminus\,\rho(p)} p'\)};
+	\end{scope}
+	\begin{scope}[shift={(0, -1.8, 0)}]
+		\draw (0, 0, 0) -- (xyz cylindrical cs:radius=2);
+		\draw (0, 0, 0) -- (xyz cylindrical cs:z=2);
+		\draw (0, 0, 2) -- (xyz cylindrical cs:radius=2, z=2);
+		\draw (2, 0, 2) -- (xyz cylindrical cs:radius=2);
+		\begin{scope}[shift={(0, 0, 2)}, cm={1, 0, 0.4, 0.5, (0,0)}]
+			\filldraw[fill=black, draw=black] (0.3, 1.2) circle (0.1);
+			\filldraw[fill=black, draw=black] (1.5, 0.9) circle (0.1);
+			\filldraw[fill=black, draw=black] (1.8, 0.6) circle (0.1);
+		\end{scope}
+	\end{scope}
+
+	\draw[dotted] (0, -0.9, 0) -- (0, -1.8, 0);
+	\draw[dotted] (2, -0.9, 0) -- (2, -1.8, 0);
+	\draw[dotted] (2, -0.9, 2) -- (2, -1.8, 2);
+	\draw[dotted] (0, -0.9, 2) -- (0, -1.8, 2);
+\end{tikzpicture}
+\end{center} 
+\vspace*{10px}
+Lastly, to keep track of all transitions, we encode each \textbf{transition domain} defined as \(\left(\left(x, y\right),d\right) \in T \times D\), where \(D \in \left\{\,\text{N, NE, E, SE, S, SW, W, NW}\,\right\}\), as an \texttt{uint\_fast16\_t} with the following layout:
+
+\begin{center}
+\begin{tikzpicture}[
+	auto,
+	semithick,
+]
+\node[rectangle, draw] (prefix) {\texttt{0b}};
+
+\node[rectangle, draw] (reserved) [right=0.1cm of prefix.east] {\texttt{0}};
+\node[] (reserved_label) [above=0.1cm of reserved.north] {reserved};
+
+\node[rectangle, draw] (pos) [right=0.1cm of reserved.east] {\texttt{000000000101}};
+\node[] (pos_label) [above=0.03cm of pos.north] {pos};
+
+\node[rectangle, draw] (dir) [right=0.1cm of pos.east] {\texttt{001}};
+\node[] (dir_label) [above=0.1cm of dir.north] {dir};
+
+	\node[] (cond) [right=0.2cm of dir] {\parbox[t]{0.46\linewidth}{where pos = \(x + wy\), dir \(\equalhat d\), \\[0.1em] \(\left\lceil\log_2(\max \text{pos})\right\rceil = \left\lceil2\log_2(50)\right\rceil = 12,\\[0.1em] \log_2\left|D\right| = 3\)}};
+\end{tikzpicture}
+\end{center}
+We then build an ordered map between transition domains to check for possible transitions during move generation and provide encoder and decoder functions for transition domains. \\
+Credits: To create a good data structure, we decided that all of us should implement one and then implement the best one. David implemented 
+the C++ version, while the other three implemented a java version. The idea for bit-layers came from David and Jesper. Fina implemented 
+the Java version with bit-layers.

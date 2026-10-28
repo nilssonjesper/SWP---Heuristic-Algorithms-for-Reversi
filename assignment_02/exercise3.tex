@@ -1,0 +1,81 @@
+\section{Exercise 3}
+
+We chose to implement the following heuristics:
+
+\begin{enumerate}
+    \item \textbf{Mobility Heuristic (1)} \\
+    This heuristic evaluates the mobility of a player by calculating the number of legal moves available. It compares this number to the average number of legal moves available to all opponents. The function returns a positive value if the player's mobility is above average, and a negative value if it is below average. Here we evaluate, that the larger the return value, the better it is. Having a negative value returned signals us being below average and is not that great. The implementation is as follows:
+    \begin{lstlisting}
+evaluate_movement(player):
+    map = get the current map variant
+
+    // Legel moves are either normal or override moves
+    Get legal moves for the player
+    player_movement = count of player_normal_moves
+
+    if player has override stones:
+        player_movement += Sum of player_override_moves
+
+    opponent_movement = 0
+
+    for each other_player in all players:
+        Get legal moves for the given player
+        opponent_movement += count of opponent_normal_moves
+
+        if other_player has override stones:
+            opponent_movement += 
+                Sum of opponent_override_moves
+
+    average_opponent_movement = 
+        opponent_movement / (number of players - 1)
+
+    return player_movement - average_opponent_movement
+    \end{lstlisting} 
+
+    \item \textbf{Domination Heuristic (2)} \\
+    This heuristic returns a percentage between 0 and 100 representing how many of the placed tiles are owned by the player. As percentages work, 100 is the best and 0 is the worst case. It is calculated as follows:
+    \begin{lstlisting}
+evaluate_domination(player):
+    player_pieces = Sum of bits set in the player's map layer 
+
+    // Build a layer containing only opponent tiles
+    opponent_tiles_layer = opponent_layer(player) NAND expansion_tile
+    total_pieces = Sum of bits set in opponent_tiles_layer
+
+    if total_pieces is 0:
+        return 0
+ 
+    return (player_pieces / total_pieces) * 100
+    \end{lstlisting}
+
+    \item \textbf{Positional Heuristics: Corners and Clustering (3 \& 4)} \\
+    These two related heuristics are combined into a single function. The first part evaluates the number of border edges or holes adjacent to the player's tiles. This is important because corner tiles, similar to those in traditional Reversi, are considered valuable. The second part examines how many enemy tiles are adjacent to the player’s tiles, helping to determine if the player’s tiles are clustered (fewer enemies nearby) or spread out (more enemies nearby). For the first heuristic, we consider a large amount of holes and border edges as good and for the second we consider a (for now) undetermined number that is large but not to large, as good. This uncertainty lies in 0 meaning, we aren't adjacent to any enemies and can't take next round, while a to large number suggests that we are to spread out and can be taken from all directions. We intend to adjust the number that marks best case, as figure out, if a cluster of tiles or a greatly spread out amount of pieces is strategically better. The two heuristics are calculated as follows, and returned as a pair:
+    \begin{lstlisting}
+evaluate_surroundings(player):
+    bit_mask = the player surroundings are set to 1 
+               (for each tile, the 8 neighboring positions are set to 1)
+
+    edge_amount = (hole_layer | game_border) & bit_mask
+
+    enemy_amount = (all_enemy_layers | expansion_layer) & bit_mask
+
+    return <edge_amount, enemy_amount>
+    \end{lstlisting}
+    \item \textbf{Inversion Threat Heuristic (5)} \\
+    This heuristic evaluates the risk and opportunity associated with inversion tiles. Being near an inversion tile can be dangerous if the player controls many tiles, as an opponent might trigger it. Conversely, being near such a tile is advantageous when the player controls few tiles, or is in a position to use it. This heuristic considers all choice fields we don't pick ourselves 0 at best and negative at worst, while the inversions are weighted as the difference between us and our inversion partner. Should the heuristic return a positive value, are the chances high that we will benefit through the choice and inversion tiles, while a negative number suggests a need, to prevent others from picking those tiles. The heuristic is calculated as follows:
+    \begin{lstlisting}
+evaluate_special():
+    int result = 0
+
+    for all enemy players:
+        result -= amount of choice tiles the enemy could place on * min(enemy_tile_amount - player_tile_amount, 0)
+
+        result += amount of inversion tiles the enemy could place on * enemy_tile_amount - player_tile_amount
+
+    return result;
+    
+    \end{lstlisting}
+    
+    \item \textbf{Override Stone Heuristic (6)} \\
+    As a little bonus, as it seamed like something we should keep track of, we also implemented a heuristic, that simply returns how many override stones we still have left. We consider a larger number better then a smaller one.
+\end{enumerate}

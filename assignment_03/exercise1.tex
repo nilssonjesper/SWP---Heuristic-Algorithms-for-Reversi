@@ -1,0 +1,82 @@
+\section{Exercise 1}
+To implement the minimax algorithm, we wrote a member function \texttt{best\_move} for the \texttt{solver} class, which takes an integer \texttt{depth} as its parameter. It then generates all valid moves for the solver's internal instance --- which is synchronized with the game taking place on the server --- and applies them in order to generate new successor instances. For each of these new instances (i.e. game tree nodes), \texttt{\_best\_move} calls \texttt{\_search\_minimax}, which recursively evaluates the node's position. The function also receives an integer \texttt{depth}, which gets passed down the recursion stack to track the amount of remaining game tree layers to be evaluated. Depending on whether the instance's internal \texttt{\_turn} member aligns with \texttt{solver.\_me}, the score is maximized or minimized accordingly. \\
+\begin{lstlisting}
+_best_move(depth):
+    moves = _instance.valid_moves()
+
+    top_score = MIN_VALUE
+    top_move
+
+    /* 
+     * lambda for applying a move and evaluating the resulting
+     * instance
+     */
+    search_node = [&](instance, pos, special) {
+        instance.apply_move(pos, special)
+
+        /// Commence recursion
+        score = _search_minimax(instance, depth - 1)
+
+        /// Update top move
+        if score > top_score:
+            top_score = score
+            top_move = move(_me, pos, _phase, special)
+    }
+
+    /// Build initial game tree layer
+    for each pos in moves:
+        /*
+         * in case of choice, all possible player choices need
+         * to be explored
+         */
+        if pos is choice:
+            for all player in instance.player_count():
+                search_node(instance, pos, player)
+        /*
+         * in case of bonus, both bomb and override stone need
+         * to be explored
+         */
+        else if pos is bonus:
+            for types of bonus:
+                search_node(instance, pos, type)
+        else search_node(instance, pos, none)
+    
+    return top_move
+\end{lstlisting}
+\begin{lstlisting}
+_search_minimax(instance, depth):
+    if depth is 0: return evaluate(instance)
+
+    max = instance._turn == _me;
+    
+    eval = max ? MIN_VALUE : MIN_VALUE
+    
+    eval_node = [&](instance, pos, special) {
+        instance.apply_move(pos, special)
+
+        child_eval = _search_minimax(instance, depth - 1)
+
+        eval = max ? (eval > child_eval ? eval : child_eval)
+                   : (eval > child_eval ? child_eval : eval)
+    }
+
+    /// Recursively execute _search_minimax for all legal moves
+    for each pos in moves:
+        /*
+         * in case of choice, all possible player choices need
+         * to be explored
+         */
+        if pos is choice:
+            for all player in instance.player_count():
+                eval_node(instance, pos, player)
+        /*
+         * in case of bonus, both bomb and override stone need
+         * to be explored
+         */
+        else if pos is bonus:
+            for types of bonus:
+                eval_node(instance, pos, type)
+        else eval_node(instance, pos, none)
+
+    return eval
+\end{lstlisting}

@@ -1,0 +1,83 @@
+\section{Exercise 2}
+For this task, we firstly extended our argsparser to handle the option \texttt{-\--noprune}, implying that our client uses \textit{Alpha-Beta pruning} by default. Currently, as this parameter can only be know at runtime, our \texttt{\_best\_move} was updated to contain a branch calling either the default (\texttt{\_search\_minimax\_alpha\_beta}) or \texttt{noprune} (\texttt{\_search\_minimax}) variant of our \textit{MiniMax} algorithm. In the future, we plan on optimizing this branch away by passing \texttt{noprune} as a template parameter to the solver class. \\\\
+To assert that the results of both algorithms are equivalent, we added the following line in \texttt{\_best\_move}. \\
+\begin{lstlisting}[mathescape]
+_best_move(depth):
+    // ...
+
+    search_node = [&](instance, pos, special) {
+        instance.apply_move(pos, special)
+
+        const instance::eval_t score = _pruning
+          ? _search_minimax_alpha_beta_pruning(i, depth - 1, INT_FAST16_MIN, INT_FAST16_MAX)
+          : _search_minimax(i, depth - 1);
+
+         $\texttt{\color{lightred}assert}$(_search_minimax_alpha_beta_pruning(i, depth - 1, INT_FAST16_MIN, INT_FAST16_MAX) == _search_minimax(i, depth - 1));
+
+        // ...
+    }
+
+    // ...
+\end{lstlisting}
+\vspace{10px}
+Locally, our build is compiled without the \texttt{-DNDEBUG} flag, ensuring that asserts are not optimized away. We have achieved this by defining our own CMake build option to enable tests and debugging (see README.md in our repo). This option is disabled by default however, ensuring that the build on Matchpoint is fully optimized. \\\\
+The \texttt{\_search\_minimax\_alpha\_beta\_pruning} function extends \texttt{\_search\_minimax} by two parameters \(\alpha\) and \(\beta\). Discarding branches occurs inside of the \texttt{eval\_node} lambda, which evaluates a successor instance analogously to the \texttt{eval\_node} of the \texttt{\_search\_minimax} routine:
+\begin{lstlisting}[mathescape]
+_search_minimax_alpha_beta_pruning(instance, depth, alpha, beta):
+    // ...
+    
+    /// Returns true on alpha or beta cutoff
+    eval_node = [&](instance, pos, special) -> $\texttt{\color{lightred}bool}$ {
+        instance.apply_move(pos, special)
+
+        child_eval = _search_minimax_alpha_beta_pruning(instance, depth - 1)
+
+        eval = max ? (eval > child_eval ? eval : child_eval)
+                   : (eval > child_eval ? child_eval : eval)
+
+        if (max) {
+            if (eval >= beta) return 1;
+            alpha = eval > alpha ? eval : alpha;
+        }
+        else {
+            if (eval <= alpha) return 1;
+            beta = eval > beta ? beta : eval;
+        }
+
+        return 0;
+     }
+
+    /// Used to break out of outer loop on alpha or beta cutoff
+    bool cutoff = false;
+
+    /// Recursively execute _search_minimax for all legal moves
+    for each pos in moves:
+        /*
+         * in case of choice, all possible player choices need
+         * to be explored
+         */
+        if pos is choice:
+            for all player in instance.player_count():
+                if (eval_node(instance, pos, player)) {
+                    cutoff = true
+                    break
+                }
+        /*
+         * in case of bonus, both bomb and override stone need
+         * to be explored
+         */
+        else if pos is bonus:
+            for types of bonus:
+                if (eval_node(instance, pos, type)) {
+                    cutoff = true
+                    break
+                }
+        else if(eval_node(instance, pos, none)) {
+            cutoff = true
+            break
+        }
+
+    return eval
+\end{lstlisting}
+\vspace{10px}
+The lambda returns whether a possible alpha or beta cutoff was detected, which the inner for loops can use to break out of the main for loop via the cutoff boolean. This enables the solver to prune irrelevant branches of the search tree.
